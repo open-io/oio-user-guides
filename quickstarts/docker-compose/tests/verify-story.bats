@@ -7,13 +7,22 @@
 
 @test "We can store a file with OpenIO client" {
     cd "${BATS_TEST_DIRNAME}/../"
-    local TEST_FILE=test.txt
+    local TEST_FILE=/tmp/test.txt
     source ./.env
-    sleep 5 # Assuming 5 s are enough to have SDS availables. TODO: Add a finite state droid for retries with timeout
+    sleep 30 # Assuming 5 s are enough to have SDS availables. TODO: Add a finite state droid for retries with timeout
     docker-compose exec openio-client bash -c "echo 'Hello OIO' > ${TEST_FILE}"
-    docker-compose exec openio-client openio object create MY_OIO_CONTAINER ${TEST_FILE} --oio-account MY_ACCOUNT --ns=OPENIO --oio-proxy="${OIO_URL}:6006"
+    docker-compose exec openio-client bash -x -c "openio object create MY_OIO_CONTAINER ${TEST_FILE} --oio-account MY_ACCOUNT --ns=OPENIO --oio-proxy=${OIO_URL}:6006"
 }
 
+@test "We can store a file with AWS S3" {
+    cd "${BATS_TEST_DIRNAME}/../"
+    local TEST_FILE=/tmp/test.txt
+    local BUCKET_NAME=quickstart-bucket
+    source ./.env
+    docker-compose exec aws-client bash -c "echo 'Hello OIO' > ${TEST_FILE}"
+    docker-compose exec aws-client bash -x -c "aws --endpoint-url http://${S3_URL}:6007 s3 mb s3://${BUCKET_NAME}"
+    docker-compose exec aws-client bash -x -c "aws --endpoint-url http://${S3_URL}:6007 s3 cp ${TEST_FILE} s3://${BUCKET_NAME}/$(basename ${TEST_FILE})"
+}
 
 @test "We can stop gracefully the docker-compose example" {
     cd "${BATS_TEST_DIRNAME}/../"
