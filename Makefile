@@ -11,7 +11,7 @@ lint:
 build:
 	@command -v docker >/dev/null || ( echo "ERROR: docker command not found. Exiting." && exit 1)
 	@docker info >/dev/null || ( echo "ERROR: docker engine not started. Exiting." && exit 1)
-	@for dockerfile in $$(find ./dockerfiles -type f -name Dockerfile);do echo "Building $${dockerfile}"; docker build -t "$$(basename "$$(dirname "$${dockerfile}" )")" "$$(dirname "$${dockerfile}")";done
+	@for dockerfile in $$(find ./dockerfiles -type f -name Dockerfile);do echo "Building $${dockerfile}"; docker build -t "openio/$$(basename "$$(dirname "$${dockerfile}" )")" "$$(dirname "$${dockerfile}")";done
 	@echo "== Build finished"
 
 
