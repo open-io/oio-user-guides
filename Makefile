@@ -19,5 +19,6 @@ build:
 test:
 	@command -v bats >/dev/null || ( echo "ERROR: bats command not found. Exiting." && exit 1)
 	@for testfile in $$(find ./ -type f -name "*.bats");do echo "Testing $${testfile}"; bats "$${testfile}"; done
+	@echo "== Tests finished"
 
 .PHONY: all lint build test
