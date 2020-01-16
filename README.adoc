@@ -1,0 +1,5 @@
+= OpenIO User Guides
+
+image:https://travis-ci.org/open-io/oio-user-guides.svg?branch=master["Build Status", link="https://travis-ci.org/open-io/oio-user-guides"]
+
+This repositories stores items for the User Guides from documentation, as quickstarts or integration examples.
