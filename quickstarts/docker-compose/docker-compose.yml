@@ -1,0 +1,68 @@
+version: '3.7'
+
+services:
+  openio-server:
+    image: openio/sds:19.10
+    restart: unless-stopped
+    networks:
+      oio_net:
+        ipv4_address: 10.0.4.10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.oiosecure.rule=hostregexp(`{host:.+}`)
+      - traefik.http.routers.oiosecure.tls=true
+      - traefik.http.routers.oiosecure.entrypoints=s3
+      - traefik.http.services.oiosecure.LoadBalancer.server.Port=6007
+      - traefik.http.routers.oio.rule=hostregexp(`{host:.+}`)
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.routers.oio.entrypoints=s3
+      - traefik.http.routers.oio.middlewares=redirect-to-https
+  
+  openio-client:
+    image: openio/sds:19.10
+    command: sleep infinity
+    restart: unless-stopped
+    extra_hosts:
+      - "${S3_URL}:10.0.4.40"
+      - "${OIO_URL}:10.0.4.10"
+    networks:
+      oio_net:
+        ipv4_address: 10.0.4.20
+  
+  s3-reverse-proxy:
+    image: traefik:v2.1
+    command:
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.filename=/certs/traefik-dyn.yml
+      - --entryPoints.s3.address=:6007
+    restart: unless-stopped
+    networks:
+      oio_net:
+        ipv4_address: 10.0.4.40
+    ports:
+      - "6007:6007"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/certs:ro
+      
+  aws-client:
+    image: openio/quickstart-aws-client
+    environment: 
+      - AWS_SHARED_CREDENTIALS_FILE=/run/secrets/aws_credentials
+      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+    extra_hosts:
+      - "${S3_URL}:10.0.4.40"
+      - "${OIO_URL}:10.0.4.10"
+    volumes:
+      - ./certs/cert.pem:/usr/local/share/ca-certificates/cert.pem:ro
+      - ./certs/rootCa.pem:/usr/local/share/ca-certificates/rootCa.pem:ro
+    networks:
+      oio_net:
+        ipv4_address: 10.0.4.30
+
+networks:
+  oio_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.0.4.0/24"
