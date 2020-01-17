@@ -9,14 +9,16 @@ services:
         ipv4_address: 10.0.4.10
     labels:
       - traefik.enable=true
-      # Force HTTP to HTTPS redirects
+      # Listen for HTTPS incoming requests with all hostnames (certificate configured with file based static configuration)
       - traefik.http.routers.oiosecure.rule=hostregexp(`{host:.+}`)
       - traefik.http.routers.oiosecure.tls=true
       - traefik.http.routers.oiosecure.entrypoints=s3
       - traefik.http.services.oiosecure.LoadBalancer.server.Port=6007
-      # Listen for HTTPS incoming requests with all hostnames
+      # Force HTTP to HTTPS redirects
       - traefik.http.routers.oio.rule=hostregexp(`{host:.+}`)
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.port=6007
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
       - traefik.http.routers.oio.entrypoints=s3
       - traefik.http.routers.oio.middlewares=redirect-to-https
   
@@ -43,15 +45,13 @@ services:
         ipv4_address: 10.0.4.40
     ports:
       - "6007:6007"
+      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/certs:ro
       
   aws-client:
     image: openio/quickstart-aws-client
-    environment: 
-      - AWS_SHARED_CREDENTIALS_FILE=/run/secrets/aws_credentials
-      - REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
     extra_hosts:
       - "${S3_URL}:10.0.4.40"
       - "${OIO_URL}:10.0.4.10"

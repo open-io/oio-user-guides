@@ -11,7 +11,8 @@ command -v mkcert || (
 )
 
 # Generate certificate with SANs
-mkcert -key-file "${CURRENT_DIR}/cert-key.pem" -cert-file "${CURRENT_DIR}/cert.pem" external.data.openio internal.data.openio "*.data.openio"
+mkcert -key-file "${CURRENT_DIR}/cert-key.pem" -cert-file "${CURRENT_DIR}/cert.pem" \
+  open.io s3.open.io "*.openio"
 
 # Get the CA file, required for full trust from cacert trust stores
 cp "$(mkcert -CAROOT)/rootCA.pem" "${CURRENT_DIR}/rootCA.pem"

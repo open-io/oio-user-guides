@@ -1,5 +1,7 @@
 ## Traefik Dynamic Configuration
 tls:
-  certificates:
-    - certFile: /certs/cert.pem
-      keyFile: /certs/cert-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/cert.pem
+        keyFile: /certs/cert-key.pem
