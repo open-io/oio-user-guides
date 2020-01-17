@@ -9,10 +9,12 @@ services:
         ipv4_address: 10.0.4.10
     labels:
       - traefik.enable=true
+      # Force HTTP to HTTPS redirects
       - traefik.http.routers.oiosecure.rule=hostregexp(`{host:.+}`)
       - traefik.http.routers.oiosecure.tls=true
       - traefik.http.routers.oiosecure.entrypoints=s3
       - traefik.http.services.oiosecure.LoadBalancer.server.Port=6007
+      # Listen for HTTPS incoming requests with all hostnames
       - traefik.http.routers.oio.rule=hostregexp(`{host:.+}`)
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
       - traefik.http.routers.oio.entrypoints=s3
