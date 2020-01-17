@@ -16,51 +16,33 @@ setup() {
 }
 
 @test "OpenIO is started successfully" {
-    local max_tries=25
-    local wait_before_retry=5
     local counter=0
-    until [ "${counter}" -ge "${max_tries}" ]
+    local max_retries=30
+    local wait_time=5
+    until [ "${counter}" -ge "${max_retries}" ]
     do
-        echo "==Trial number ${counter}"
-        docker-compose exec openio-server openio cluster list --ns="${OIO_NAMESPACE}" || break
-        sleep "${wait_before_retry}"
+        echo "== Trial ${counter} for openio-server logs check"
+        if [ "10" -eq "$(docker-compose logs openio-server 2>&1 | grep -c 'is now up')" ]
+        then
+            break
+        fi
+        sleep "${wait_time}"
         counter=$((counter + 1))
     done
     echo "== Final counter: ${counter}"
-    [ ${counter} -lt ${max_tries} ]   
+    [ ${counter} -lt ${max_retries} ]
+    
+    docker-compose exec openio-server openio cluster list --ns="${OIO_NAMESPACE}"
 }
 
 @test "We can store a file with OpenIO client" {
     docker-compose exec openio-client bash -c "echo 'Hello OIO' > ${TEST_FILE}"
-    
-    local max_tries=10
-    local wait_before_retry=3
-    local counter=0
-    until [ "${counter}" -ge "${max_tries}" ]
-    do
-        echo "==Trial number ${counter}"
-        docker-compose exec openio-client openio object create MY_OIO_CONTAINER "${TEST_FILE}" --oio-account MY_ACCOUNT --ns="${OIO_NAMESPACE}" --oio-proxy="${OIO_URL}:6006" || break
-        sleep "${wait_before_retry}"
-        counter=$((counter + 1))
-    done
-    echo "== Final counter: ${counter}"
-    [ ${counter} -lt ${max_tries} ] 
+    docker-compose exec openio-client openio object create MY_OIO_CONTAINER "${TEST_FILE}" --oio-account MY_ACCOUNT --ns="${OIO_NAMESPACE}" --oio-proxy="${OIO_URL}:6006"
 }
 
 @test "We can store a file with AWS S3" {
     docker-compose exec aws-client bash -c "echo 'Hello S3' > ${TEST_FILE}"
-    local max_tries=10
-    local wait_before_retry=3
-    local counter=0
-    until [ "${counter}" -ge "${max_tries}" ]
-    do
-        echo "==Trial number ${counter}"
-        docker-compose exec aws-client aws --endpoint-url="https://${S3_URL}:6007" s3 mb "s3://${BUCKET_NAME}" || break
-        sleep "${wait_before_retry}"
-        counter=$((counter + 1))
-    done
-    echo "== Final counter: ${counter}"
-    [ ${counter} -lt ${max_tries} ] 
+    docker-compose exec aws-client aws --endpoint-url="https://${S3_URL}:6007" s3 mb "s3://${BUCKET_NAME}"
     docker-compose exec aws-client aws --endpoint-url="https://${S3_URL}:6007" s3 cp "${TEST_FILE}" "s3://${BUCKET_NAME}/$(basename ${TEST_FILE})"
 }
 

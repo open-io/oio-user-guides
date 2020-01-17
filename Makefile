@@ -22,7 +22,7 @@ endif
 
 # Search for Dockerfiles to build images from. Image name is always `openio/<name of directory>` where directory contains the Dockerfile
 build: docker
-	@for dockerfile in $$(find ./dockerfiles -type f -name Dockerfile);do echo "Building $${dockerfile}"; docker build -t "openio/$$(basename "$$(dirname "$${dockerfile}" )")" "$$(dirname "$${dockerfile}")";done
+	@set -euo pipefail; for dockerfile in $$(find ./dockerfiles -type f -name Dockerfile);do echo "Building $${dockerfile}"; docker build -t "openio/$$(basename "$$(dirname "$${dockerfile}" )")" "$$(dirname "$${dockerfile}")";done
 	@echo "== Build finished"
 
 

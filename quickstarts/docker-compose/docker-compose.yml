@@ -1,4 +1,4 @@
-version: '3.7'
+version: '2.4'
 
 services:
   openio-server:
@@ -37,7 +37,7 @@ services:
     image: traefik:v2.1
     command:
       - --providers.docker.exposedbydefault=false
-      - --providers.file.filename=/certs/traefik-dyn.yml
+      - --providers.file.filename=/traefik-dyn.yml
       - --entryPoints.s3.address=:6007
     restart: unless-stopped
     networks:
@@ -45,10 +45,12 @@ services:
         ipv4_address: 10.0.4.40
     ports:
       - "6007:6007"
-      - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs:ro
+      - certificates:/certs:ro
+      - ./traefik-dyn.yml:/traefik-dyn.yml:ro
+    depends_on:
+      - certificates-generator
       
   aws-client:
     image: openio/quickstart-aws-client
@@ -56,15 +58,27 @@ services:
       - "${S3_URL}:10.0.4.40"
       - "${OIO_URL}:10.0.4.10"
     volumes:
-      - ./certs/cert.pem:/usr/local/share/ca-certificates/cert.pem:ro
-      - ./certs/rootCa.pem:/usr/local/share/ca-certificates/rootCa.pem:ro
+      - certificates:/usr/local/share/ca-certificates:ro
+    depends_on:
+      - certificates-generator
     networks:
       oio_net:
         ipv4_address: 10.0.4.30
 
+  certificates-generator:
+    image: openio/quickstart-mkcert
+    restart: on-failure
+    volumes:
+      - certificates:/certs:ro
+
+# OpenIO requires static IP per service
 networks:
   oio_net:
     ipam:
       driver: default
       config:
         - subnet: "10.0.4.0/24"
+
+# Sharing certificate between containers
+volumes:
+  certificates:
