@@ -17,7 +17,7 @@ setup() {
 
 @test "OpenIO is started successfully" {
     local counter=0
-    local max_retries=30
+    local max_retries=60
     local wait_time=5
     until [ "${counter}" -ge "${max_retries}" ]
     do
