@@ -3,5 +3,5 @@ tls:
   stores:
     default:
       defaultCertificate:
-        certFile: /certs/cert.pem
-        keyFile: /certs/cert-key.pem
+        certFile: /certificates/cert.pem
+        keyFile: /certificates/cert-key.pem

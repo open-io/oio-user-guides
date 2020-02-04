@@ -36,19 +36,10 @@ services:
       - "6007:6007"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - certificates:/certs:ro
+      - ../certificates:/certificates:ro
       - ./traefik-dyn.yml:/traefik-dyn.yml:ro
     depends_on:
       - certificates-generator
-  
-  certificates-generator:
-    build: ./
-    user: root
-    command: sh -c "rm -f /exportcerts/* && cp /certs/* /exportcerts"
-    restart: on-failure
-    volumes:
-      - certificates:/certs:ro
-      - /certificates:/exportcerts:rw
 
 # OpenIO requires static IP per service
 networks:
@@ -57,7 +48,3 @@ networks:
       driver: default
       config:
         - subnet: "10.0.4.0/24"
-
-# Sharing certificate between containers
-volumes:
-  certificates:
