@@ -1,2 +1,3 @@
 .vagrant
 .vscode/
+kubernetes/csi-s3/k3s-config.yaml

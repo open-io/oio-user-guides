@@ -2,35 +2,43 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "openio" do |openio|
     openio.vm.box = "ubuntu/bionic64"
-
+    
     openio.vm.provider "virtualbox" do |v|
       v.memory = 2048
       v.cpus = 2
+      v.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
     end
-  
+      
     openio.vm.hostname = "openio"
         
     openio.vm.provision "shell", path: "openio/provision.sh"
   
     openio.vm.network "forwarded_port", guest: 6007, host: 6007, auto_correct: false, id: "s3-https"
     
-    config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
+    # openio.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
+    
+    openio.vm.network "private_network", ip: "192.168.100.10"
   end
   
-  # config.vm.define "kube" do |kube|
-  #   kube.vm.box = "ubuntu/bionic64"
+  config.vm.define "kube" do |kube|
+    kube.vm.box = "ubuntu/bionic64"
 
-  #   kube.vm.provider "virtualbox" do |v|
-  #     v.memory = 2048
-  #     v.cpus = 2
-  #   end
+    kube.vm.provider "virtualbox" do |v|
+      v.memory = 2048
+      v.cpus = 2
+      v.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+    end
   
-  #   kube.vm.hostname = "kube"
+    kube.vm.hostname = "kube"
       
-  #   kube.vm.provision "shell", path: "provision-kube.sh"
+    kube.vm.provision "shell", path: "kube/provision.sh"
   
-  #   kube.vm.network "forwarded_port", guest: 80, host: 80, auto_correct: false, id: "http"
-  #   kube.vm.network "forwarded_port", guest: 443, host: 443, auto_correct: false, id: "https"
-  #   kube.vm.network "forwarded_port", guest: 6443, host: 6443, auto_correct: false, id: "kube-api"
-  # end
+    kube.vm.network "forwarded_port", guest: 80, host: 80, auto_correct: false, id: "http"
+    kube.vm.network "forwarded_port", guest: 443, host: 443, auto_correct: false, id: "https"
+    kube.vm.network "forwarded_port", guest: 6443, host: 6443, auto_correct: false, id: "kube-api"
+    
+    # kube.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
+    
+    kube.vm.network "private_network", ip: "192.168.100.20"
+  end
 end

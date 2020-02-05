@@ -36,8 +36,12 @@ curl -sSfL https://github.com/docker/compose/releases/download/1.25.4/docker-com
 chmod +x /usr/local/bin/docker-compose
 docker-compose version
 
-## Network setup
-echo '172.17.0.1   s3.open.io open.io' >> /etc/hosts # Self IP is docker0 to reach compose services
+## DNS setup
+HOST_ENTRY_OIO='192.168.100.10   s3.open.io'
+grep "${HOST_ENTRY_OIO}" /etc/hosts || echo "${HOST_ENTRY_OIO}" >> /etc/hosts
+
+HOST_ENTRY_WEBAPP='192.168.100.20   webapp.open.io'
+grep "${HOST_ENTRY_WEBAPP}" /etc/hosts || echo "${HOST_ENTRY_WEBAPP}" >> /etc/hosts
 
 ## Start Services
 cd /vagrant/openio
