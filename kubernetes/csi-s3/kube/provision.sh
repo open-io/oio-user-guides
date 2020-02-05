@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eux -o pipefail
 
+CURRENT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+
 ## Install k3s
 curl -sfL https://get.k3s.io | sh -
 counter=0
@@ -28,9 +30,13 @@ grep "${HOST_ENTRY_OIO}" /etc/hosts || echo "${HOST_ENTRY_OIO}" >> /etc/hosts
 HOST_ENTRY_WEBAPP='192.168.100.20   webapp.open.io'
 grep "${HOST_ENTRY_WEBAPP}" /etc/hosts || echo "${HOST_ENTRY_WEBAPP}" >> /etc/hosts
 
-# /usr/local/bin/kubectl completion bash > /etc/bash_completion.d/kubectl
-# /usr/local/bin/kubectl get pod --all-namespaces
-# /usr/local/bin/kubectl create -f /vagrant/kubernetes/s3-secret.yaml
-# /usr/local/bin/kubectl create -f /vagrant/kubernetes/provisioner.yaml
-# /usr/local/bin/kubectl create -f /vagrant/kubernetes/attacher.yaml
-# /usr/local/bin/kubectl create -f /vagrant/kubernetes/csi-s3.yaml
+## Deploy CSI-S3 Manifests
+
+# Start by storing self signed certificates from OpenIO as a kube secret
+NAMESPACE_NAME="csi-s3"
+kubectl create namespace "${NAMESPACE_NAME}"
+kubectl create secret --namespace="${NAMESPACE_NAME}" generic oio-certs \
+    --from-file="${CURRENT_DIR}/../certificates/cert.pem" \
+    --from-file="${CURRENT_DIR}/../certificates/rootCA.pem"
+
+kubectl apply -f "${CURRENT_DIR}/manifests/csi-s3"

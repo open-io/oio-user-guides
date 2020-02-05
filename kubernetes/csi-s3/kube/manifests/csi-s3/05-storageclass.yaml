@@ -9,10 +9,10 @@ parameters:
   # can be set to rclone, s3fs, goofys or s3backer
   mounter: rclone
   csi.storage.k8s.io/provisioner-secret-name: csi-s3-secret
-  csi.storage.k8s.io/provisioner-secret-namespace: default
+  csi.storage.k8s.io/provisioner-secret-namespace: csi-s3
   csi.storage.k8s.io/controller-publish-secret-name: csi-s3-secret
-  csi.storage.k8s.io/controller-publish-secret-namespace: default
+  csi.storage.k8s.io/controller-publish-secret-namespace: csi-s3
   csi.storage.k8s.io/node-stage-secret-name: csi-s3-secret
-  csi.storage.k8s.io/node-stage-secret-namespace: default
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-s3
   csi.storage.k8s.io/node-publish-secret-name: csi-s3-secret
-  csi.storage.k8s.io/node-publish-secret-namespace: default
+  csi.storage.k8s.io/node-publish-secret-namespace: csi-s3

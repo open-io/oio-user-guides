@@ -1,0 +1,46 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: webapp-deployment
+  namespace: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - name: csi-s3-test-nginx
+          image: nginx:alpine
+          securityContext:
+            readOnlyRootFilesystem: true
+          resources:
+            limits:
+              cpu: "1"
+              memory: "256Mi"
+            requests:
+              cpu: "0.5"
+              memory: "128Mi"
+          volumeMounts:
+            - mountPath: /var/lib/www/html
+              name: webroot
+            - mountPath: /var/cache/nginx
+              name: cache-dir
+            - mountPath: /var/run
+              name: pid-dir
+      volumes:
+        - name: webroot
+          persistentVolumeClaim:
+            claimName: csi-s3-pvc
+            readOnly: false
+        - name: cache-dir
+          emptyDir:
+            medium: "Memory"
+        - name: pid-dir
+          emptyDir:
+            medium: "Memory"
