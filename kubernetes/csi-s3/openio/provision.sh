@@ -1,35 +1,40 @@
 #!/bin/bash
 set -eux -o pipefail
 
-## Install Docker on CentOS
+## This script provision the OpenIO Docker Compose Stack on Ubuntu Bionic (LTS - 18.04)
 
-yum update -y
+## Install Docker on Ubuntu - https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
-yum install -y \
-  device-mapper-persistent-data \
-  lvm2 \
-  yum-utils
+apt-get update -qq
+apt-get remove -y docker docker-engine docker.io containerd runc
 
-yum-config-manager -y --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+apt-get install -y -qq \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
 
-yum install -y \
-  containerd.io \
-  docker-ce \
-  docker-ce-cli
-  
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 
-systemctl start docker
+add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+
+apt-get update -qq
+apt-get upgrade -y -qq
+apt-get install -y -qq docker-ce docker-ce-cli containerd.io
+
+usermod -aG docker ubuntu
+
+systemctl restart docker
 systemctl enable docker
 
-systemctl stop firewalld || true
-systemctl disable firewalld || true
-
-systemctl stop iptables || true
-systemctl disable iptables || true
-
 ## Install Docker-Compose
-curl -L "https://github.com/docker/compose/releases/download/1.25.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+curl -sSfL https://github.com/docker/compose/releases/download/1.25.4/docker-compose-"$(uname -s)"-"$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
+docker-compose version
 
 ## Network setup
 echo '172.17.0.1   s3.open.io open.io' >> /etc/hosts # Self IP is docker0 to reach compose services

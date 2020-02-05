@@ -38,8 +38,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ../certificates:/certificates:ro
       - ./traefik-dyn.yml:/traefik-dyn.yml:ro
-    depends_on:
-      - certificates-generator
 
 # OpenIO requires static IP per service
 networks:

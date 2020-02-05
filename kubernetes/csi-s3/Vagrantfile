@@ -1,12 +1,36 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "centos/7"
 
-  config.vm.provider "virtualbox" do |v|
-    v.memory = 2048
-    v.cpus = 2
+  config.vm.define "openio" do |openio|
+    openio.vm.box = "ubuntu/bionic64"
+
+    openio.vm.provider "virtualbox" do |v|
+      v.memory = 2048
+      v.cpus = 2
+    end
+  
+    openio.vm.hostname = "openio"
+        
+    openio.vm.provision "shell", path: "openio/provision.sh"
+  
+    openio.vm.network "forwarded_port", guest: 6007, host: 6007, auto_correct: false, id: "s3-https"
+    
+    config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__exclude: ".git/"
   end
   
-  config.vm.hostname = "dc"
+  # config.vm.define "kube" do |kube|
+  #   kube.vm.box = "ubuntu/bionic64"
 
-  config.vm.provision "shell", path: "provision.sh"
+  #   kube.vm.provider "virtualbox" do |v|
+  #     v.memory = 2048
+  #     v.cpus = 2
+  #   end
+  
+  #   kube.vm.hostname = "kube"
+      
+  #   kube.vm.provision "shell", path: "provision-kube.sh"
+  
+  #   kube.vm.network "forwarded_port", guest: 80, host: 80, auto_correct: false, id: "http"
+  #   kube.vm.network "forwarded_port", guest: 443, host: 443, auto_correct: false, id: "https"
+  #   kube.vm.network "forwarded_port", guest: 6443, host: 6443, auto_correct: false, id: "kube-api"
+  # end
 end
