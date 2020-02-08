@@ -1,0 +1,60 @@
+
+nb_disk_per_node = 2
+nb_nodes = 3
+VAGRANT_ROOT = File.dirname(File.expand_path(__FILE__))
+
+Vagrant.configure("2") do |config|
+    
+    config.vm.define "node-admin" do |node|
+        
+        node.vm.box = "openio-box"
+        node.vm.box_url = "./openio-box/openio.box"
+        
+        node.vm.provider "virtualbox" do |vb|
+            vb.memory = 2048
+            vb.cpus = 1
+                
+            vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+        end
+            
+        node.vm.hostname = "node-admin"
+        
+                        
+        node.vm.network "private_network", ip: "192.168.100.5"
+    end
+    
+    (1..nb_nodes).each do |num_node|
+        config.vm.define "node-#{num_node}" do |node|
+            
+            node.vm.box = "openio-box"
+            node.vm.box_url = "./openio-box/openio.box"
+        
+            node.vm.provider "virtualbox" do |vb|
+                vb.memory = 3072
+                vb.cpus = 2
+                
+                vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+                                
+                (1..nb_disk_per_node).each do |num_disk|
+                    
+                    file_to_disk = File.join(VAGRANT_ROOT, '.tmp', "node-#{num_node}-disk-#{num_disk}.vdi")
+                    
+                    if not File.exist?(file_to_disk)
+                        vb.customize ['createhd', '--filename', file_to_disk, '--variant', 'Standard', '--size', 10 * 1024]
+                    end
+        
+                    vb.customize ['storageattach', :id,  '--storagectl', 'SCSI', '--port', 1+num_disk , '--device', 0, '--type', 'hdd', '--medium', file_to_disk]
+                end
+            end
+            
+            node.vm.hostname = "node-#{num_node}"
+                        
+            node.vm.provision "shell" do |s|
+                s.path = "provision/disks.sh"
+                s.args   = "#{nb_disk_per_node}"
+              end
+                        
+            node.vm.network "private_network", ip: "192.168.100.#{num_node}0"
+        end
+      end
+  end

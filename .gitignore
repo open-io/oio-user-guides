@@ -1,0 +1,6 @@
+.vscode
+.tmp
+.vagrant
+*.log
+*.box
+*.vdi

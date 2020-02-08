@@ -1,0 +1,15 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "ubuntu/bionic64"
+    
+    config.vm.synced_folder ".", "/vagrant", disabled: true
+    
+     config.vm.provider "virtualbox" do |vb|
+        vb.memory = 1024
+        vb.cpus = 1
+            
+        vb.customize [ "modifyvm", :id, "--uartmode1", "disconnected" ]
+    end
+    
+    config.vm.provision "shell", path: "../provision/commons.sh"
+
+end
