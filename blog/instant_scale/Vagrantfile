@@ -1,0 +1,70 @@
+nb_disk_per_node = 5
+size_disk = "1G"
+nb_nodes = 4
+
+VAGRANT_ROOT = File.dirname(File.expand_path(__FILE__))
+
+Vagrant.configure("2") do |config|
+
+    config.vm.define "lb" do |node|
+
+        node.vm.box = "centos/7"
+
+        node.vm.provider "virtualbox" do |vb|
+            vb.memory = 1024
+            vb.cpus = 1
+
+            ## Faster boot: log console files to specified file
+            vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+            vb.customize ["modifyvm", :id, "--uartmode1", "file", "/dev/null"]
+            
+            ## Safe defaults settings to avoid VBox GUI complaining
+            vb.customize [ "modifyvm", :id, "--graphicscontroller", "vmsvga" ]
+        end
+
+        node.vm.hostname = "lb"
+
+        node.vm.network "private_network", ip: "192.168.4.200"
+
+        node.vm.provision :shell, :path => "provision/common.sh"
+        node.vm.provision :shell, :path => "provision/lb.sh"
+        node.vm.provision :shell, :path => "provision/deployment.sh"
+ 
+        # dashboard traefik
+        node.vm.network "forwarded_port", guest_ip: "192.168.4.200", guest: 8081, host: 8081
+        # s3 tls
+        node.vm.network "forwarded_port", guest_ip: "192.168.4.200", guest: 443, host: 8443
+        
+    end
+
+    (1..nb_nodes).each do |num_node|
+        config.vm.define "node#{num_node}" do |node|
+
+            node.vm.box = "centos/7"
+
+            node.vm.provider "virtualbox" do |vb|
+                vb.memory = 3072
+                vb.cpus = 2
+
+                #_ Faster boot: log console files to specified file
+                vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+                vb.customize ["modifyvm", :id, "--uartmode1", "file", "/dev/null"]
+                
+                ## Safe defaults settings to avoid VBox GUI complaining
+                vb.customize [ "modifyvm", :id, "--graphicscontroller", "vmsvga" ]
+
+            end
+
+            node.vm.hostname = "node#{num_node}"
+
+            node.vm.provision :shell, :path => "provision/common.sh"
+            node.vm.provision "shell" do |s|
+              s.path = "provision/nodes.sh"
+              s.args   = "#{nb_disk_per_node} #{size_disk}"
+            end
+
+            node.vm.network "private_network", ip: "192.168.4.#{num_node}0"
+        end
+    end
+end
+

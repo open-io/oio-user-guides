@@ -1,0 +1,231 @@
+---
+all:
+  hosts:
+    node1:
+      ansible_host: 192.168.4.10
+      # Customized openio devices definition
+      openio_data_mounts:
+        - { 'partition': '/dev/loop0', 'mountpoint': '/mnt/disk0' }
+        - { 'partition': '/dev/loop1', 'mountpoint': '/mnt/disk1' }
+        - { 'partition': '/dev/loop2', 'mountpoint': '/mnt/disk2' }
+
+        - { 'partition': '/dev/loop3', 'mountpoint': '/mnt/disk3' }
+      openio_metadata_mounts:
+        - { 'partition': '/dev/loop4', 'mountpoint': '/mnt/disk4', 'meta2_count': 2 }
+
+    node2:
+      ansible_host: 192.168.4.20
+
+    node3:
+      ansible_host: 192.168.4.30
+      openio_data_mounts:
+        - { 'partition': '/dev/loop0', 'mountpoint': '/mnt/disk0' }
+        - { 'partition': '/dev/loop1', 'mountpoint': '/mnt/disk1' }
+        - { 'partition': '/dev/loop2', 'mountpoint': '/mnt/disk2' }
+        - { 'partition': '/dev/loop4', 'mountpoint': '/mnt/disk4' }  # new disk
+      openio_metadata_mounts:
+        - { 'partition': '/dev/loop3', 'mountpoint': '/mnt/disk3', 'meta2_count': 2 }
+
+
+    node4:
+      ansible_host: 192.168.4.40
+
+  vars:
+    ansible_user: vagrant
+    ansible_ssh_pass: vagrant
+
+    # Enable check of mountpoint for SDS
+    openio_checks_filter:
+      mountpoint: true
+
+  children:
+    openio:
+      children:
+        fronts: {}
+        backs: {}
+
+      vars:
+        namespace: OPENIO
+        namespace_storage_policy: "ECISAL63D1"
+
+        # Global openio devices definition
+        openio_data_mounts:
+          - { 'partition': '/dev/loop0', 'mountpoint': '/mnt/disk0' }
+          - { 'partition': '/dev/loop1', 'mountpoint': '/mnt/disk1' }
+          - { 'partition': '/dev/loop2', 'mountpoint': '/mnt/disk2' }
+        openio_metadata_mounts:
+          - { 'partition': '/dev/loop3', 'mountpoint': '/mnt/disk3', 'meta2_count': 2 }
+
+        # Vagrant "private_network" is binded on eth1
+        openio_bind_interface: eth1
+        openio_bind_address: "{{ ansible_eth1.ipv4.address }}"
+
+        # Multiple ConsciousGrid
+        openio_conscience_multiple_enable: true
+
+        # Speed up discovery
+        openio_conscience_services_common_timeout: 5
+        openio_conscienceagent_check_interval: 1
+        openio_namespace_options:
+          - "proxy.period.cs.upstream=1"
+          - "proxy.period.cs.downstream=2"
+
+        # Multiple users and tenants
+        openio_oioswift_users:
+          - name: "TENANT1:user1"
+            password: "USER11_PASS"
+            roles:
+              - member
+          - name: "TENANT1:user2"
+            password: "USER12_PASS"
+            roles:
+              - member
+          - name: "TENANT2:user1"
+            password: "USER21_PASS"
+            roles:
+              - member
+
+        openio_oioswift_iam_policy:
+          'TENANT1:user1':
+            Statement:
+              - Sid: FullAccess
+                Action:
+                  - 's3:*'
+                Effect: Allow
+                Resource:
+                  - '*'
+          # Only GetObject
+          'TENANT1:user2':
+            Statement:
+              - Sid: GetObject
+                Action:
+                  - 's3:GetObject'
+                Effect: Allow
+                Resource:
+                  - 'arn:aws:s3:::bucketname/*'
+          'TENANT2:user1':
+            Statement:
+              - Sid: FullAccess
+                Action:
+                  - 's3:*'
+                Effect: Allow
+                Resource:
+                  - '*'
+
+        # Credentials for private features
+        openio_repositories_credentials: {}
+
+    # what is not used for storage
+    fronts:
+      hosts: {}
+
+    # what is used for storage
+    backs:
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+        node4: {}
+
+### SDS
+    account:
+      children:
+        backs: {}
+
+    beanstalkd:
+      children:
+        backs: {}
+
+    conscience: # Multiple ConsciousGrid
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+
+    conscience-agent:
+      children:
+        backs: {}
+
+    ecd:
+      children:
+        backs: {}
+
+    meta:
+      children:
+        meta0: {}
+        meta1: {}
+        meta2: {}
+
+    meta0:
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+
+    meta1:
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+
+    meta2:
+      children:
+        backs: {}
+
+    namespace:
+      children:
+        openio: {}
+
+    oio-blob-indexer:
+      children:
+        backs: {}
+
+    oio-blob-rebuilder:
+      children:
+        backs: {}
+
+    oio-event-agent:
+      children:
+        backs: {}
+
+    oioproxy:
+      children:
+        openio: {}
+
+    oioswift:
+      children:
+        backs: {}
+      vars:
+        # Enable IAM user policies
+        openio_oioswift_pipeline: "{{ pipeline_tempauth_iam }}"
+
+        openio_oioswift_filter_tempauth:
+          "{{ {'use': 'egg:oioswift#tempauth'} | combine(openio_oioswift_users | dict_to_tempauth) }}"
+    rawx:
+      children:
+        backs: {}
+
+    rdir:
+      children:
+        backs: {}
+
+    redis:
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+
+    zookeeper:
+      hosts:
+        node1: {}
+        node2: {}
+        node3: {}
+
+### OIOFS
+    oiofs:
+      hosts: {}
+      vars: {}
+
+    oiofs_redis:
+      hosts: {}
+...
